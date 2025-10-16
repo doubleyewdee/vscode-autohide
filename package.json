@@ -28,7 +28,7 @@
         "sidebar"
     ],
     "activationEvents": [
-        "*"
+        "onStartupFinished"
     ],
     "main": "./out/extension.ts",
     "contributes": {
