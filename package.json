@@ -1,15 +1,15 @@
 {
-    "name": "vscode-autohide",
-    "displayName": "Auto Hide",
-    "description": "A tool to autohide the sidebar and terminal panel.",
-    "version": "1.0.10",
-    "publisher": "sirmspencer",
+    "name": "vscode-autohide-still",
+    "displayName": "Auto Hide (Still?)",
+    "description": "A tool to automagically hide the sidebar and terminal panel.",
+    "version": "1.0.0",
+    "publisher": "doubleyewdee",
     "repository": {
-        "url": "https://github.com/sirmspencer/vscode-autohide"
+        "url": "https://github.com/doubleyewdee/vscode-autohide"
     },
     "icon": "Images/Icons/Logo_128.png",
     "engines": {
-        "vscode": "^1.43.0"
+        "vscode": "^1.105.0"
     },
     "extensionKind": [
         "ui",
@@ -30,7 +30,7 @@
     "activationEvents": [
         "*"
     ],
-    "main": "./out/src/extension",
+    "main": "./out/extension.ts",
     "contributes": {
         "configuration": {
             "type": "object",
@@ -44,7 +44,7 @@
                 "autoHide.autoHideAuxiliaryBar": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Hide the auxiliary bar (second side bar) when the user clicks into a text editor."
+                    "description": "Hide the auxiliary bar (second side bar / Copilot) when the user clicks into a text editor."
                 },
                 "autoHide.autoHidePanel": {
                     "type": "boolean",
@@ -56,7 +56,7 @@
                     "default": true,
                     "description": "Hide the References panel (`Go to References`) when the user clicks into a text editor."
                 },
-                "autoHide.sideBarDelay": {
+                "autoHide.delay": {
                     "type": "number",
                     "default": 450,
                     "description": "How long to wait before hiding the side bar. A delay prevents text from being selected. A longer delay allows the horizontal scroll to adjust to the change in selection before the side bar hiding causes the horizontal scroll to adjust, avoiding conflicts."
@@ -70,6 +70,11 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Hide side bar and panel when VSCode first opens."
+                },
+                "autoHide.hideOnKeyboard": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Hide side bar and panel when user presses any keys in the editor."
                 }
             }
         },
@@ -92,17 +97,22 @@
         ]
     },
     "scripts": {
-        "compile": "tsc -watch -p ./",
-        "#test": "node ./node_modules/vscode/bin/test",
-        "vscode:prepublish": "tsc -p ./",
-        "#postinstall": "node ./node_modules/vscode/bin/install",
-        "publish": "vsce publish"
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src",
+        "test": "vscode-test"
     },
     "devDependencies": {
-        "@types/mocha": "^2.2.32",
-        "@types/node": "^6.0.40",
-        "mocha": "^7.2.0",
-        "typescript": "^2.9.2",
-        "vscode": "^1.1.36"
+        "@types/vscode": "^1.105.0",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "22.x",
+        "@typescript-eslint/eslint-plugin": "^8.45.0",
+        "@typescript-eslint/parser": "^8.45.0",
+        "eslint": "^9.36.0",
+        "typescript": "^5.9.3",
+        "@vscode/test-cli": "^0.0.11",
+        "@vscode/test-electron": "^2.5.2"
     }
 }

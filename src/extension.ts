@@ -3,6 +3,38 @@
 import * as vscode from "vscode";
 import { TextEditorSelectionChangeKind } from "vscode";
 
+
+function doHideActions(isKeyboardChange: boolean)
+{
+    const config = vscode.workspace.getConfiguration("autoHide");
+
+    if (isKeyboardChange && !config.hideOnKeyboard) {
+        return;
+    }
+
+    if (config.autoHideReferences) {
+        vscode.commands.executeCommand("closeReferenceSearch");
+    }
+
+    setTimeout(function () {
+        if (config.autoHidePanel) {
+            vscode.commands.executeCommand("workbench.action.closePanel");
+        }
+    }, config.panelDelay);
+
+    setTimeout(function () {
+        if (config.autoHideSideBar) {
+            vscode.commands.executeCommand("workbench.action.closeSidebar");
+        }
+    }, config.sideBarDelay);
+
+    setTimeout(function () {
+        if (config.autoHideAuxiliaryBar) {
+            vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
+        }
+    }, config.sideBarDelay);
+}
+
 export function activate(context: vscode.ExtensionContext) {
     const initialConfig = vscode.workspace.getConfiguration("autoHide");
 
@@ -24,14 +56,27 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
+    // this occurs when the user opens a new file (e.g. from terminal) or swaps tabs, it *does not* trigger
+    // when going from terminal focus to editor focus if it's the same editor, sadly
+    vscode.window.onDidChangeActiveTextEditor(editor => {
+        if (!editor) {
+            return;
+        }
+
+        doHideActions(false);
+    });
+
     vscode.window.onDidChangeTextEditorSelection(selection => {
-        const config = vscode.workspace.getConfiguration("autoHide");
+        // no active editor means we shouldn't hide anything
+        if (!vscode.window.activeTextEditor) {
+            return;
+        }
+
         const path = vscode.window.activeTextEditor.document.fileName;
         const pathIsFile = path.includes(".") || path.includes("\\") || path.includes("/");
         const scheme = selection.textEditor.document.uri.scheme;
 
         if (
-            selection.kind != TextEditorSelectionChangeKind.Mouse || // selection was not from a click
             selection.selections.length != 1 ||                      // no selections or multiselections
             selection.selections.find(a => a.isEmpty) == null ||     // multiselections
             !pathIsFile ||                                           // The debug window editor
@@ -40,27 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        if (config.autoHideReferences) {
-            vscode.commands.executeCommand("closeReferenceSearch");
-        }
-
-        setTimeout(function () {
-            if (config.autoHidePanel) {
-                vscode.commands.executeCommand("workbench.action.closePanel");
-            }
-        }, config.panelDelay);
-
-        setTimeout(function () {
-            if (config.autoHideSideBar) {
-                vscode.commands.executeCommand("workbench.action.closeSidebar");
-            }
-        }, config.sideBarDelay);
-
-        setTimeout(function () {
-            if (config.autoHideAuxiliaryBar) {
-                vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
-            }
-        }, config.sideBarDelay);
+        doHideActions(selection.kind == TextEditorSelectionChangeKind.Mouse);
     });
 
     context.subscriptions.push(
