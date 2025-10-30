@@ -2,11 +2,23 @@ import * as vscode from "vscode";
 import { TextEditorSelectionChangeKind } from "vscode";
 
 
-function doHideActions(isKeyboardChange: boolean)
+function doHideActions(editor: vscode.TextEditor, isKeyboardChange: boolean)
 {
+    // no active editor means we shouldn't hide anything
+    if (!vscode.window.activeTextEditor) {
+        return;
+    }
+
     const config = vscode.workspace.getConfiguration("autoHide");
 
     if (isKeyboardChange && !config.hideOnKeyboard) {
+        return;
+    }
+
+    // don't hide if the current document isn't a "real" text editor (e.g. output or debug windows)
+    const path = vscode.window.activeTextEditor.document.fileName;
+    const pathIsFile = path.includes(".") || path.includes("\\") || path.includes("/"); // dubious of this check but okay
+    if (!pathIsFile || editor.document.uri.scheme == "output") {
         return;
     }
 
@@ -61,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        doHideActions(false);
+        doHideActions(editor, false);
     });
 
     vscode.window.onDidChangeTextEditorSelection(selection => {
@@ -70,20 +82,12 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        const path = vscode.window.activeTextEditor.document.fileName;
-        const pathIsFile = path.includes(".") || path.includes("\\") || path.includes("/");
-        const scheme = selection.textEditor.document.uri.scheme;
-
-        if (
-            selection.selections.length != 1 ||                      // no selections or multiselections
-            selection.selections.find(a => a.isEmpty) == null ||     // multiselections
-            !pathIsFile ||                                           // The debug window editor
-            scheme == "output"                                       // The output window
-        ) {
+        // if there is no selection or there are multiple selections, do nothing
+        if (selection.selections.length != 1 || selection.selections.find(a => a.isEmpty) == null) {
             return;
         }
 
-        doHideActions(selection.kind == TextEditorSelectionChangeKind.Mouse);
+        doHideActions(selection.textEditor, selection.kind == TextEditorSelectionChangeKind.Mouse);
     });
 
     context.subscriptions.push(
