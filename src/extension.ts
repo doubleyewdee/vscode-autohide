@@ -4,8 +4,10 @@ import { TextEditorSelectionChangeKind } from "vscode";
 
 function doHideActions(editor: vscode.TextEditor, isKeyboardChange: boolean)
 {
-    // no active editor means we shouldn't hide anything
-    if (!vscode.window.activeTextEditor) {
+    // we should skip auto-hiding if:
+    // 1. there's no active editor
+    // 2. there's an active debug session
+    if (!vscode.window.activeTextEditor || vscode.debug.activeDebugSession) {
         return;
     }
 
@@ -15,7 +17,8 @@ function doHideActions(editor: vscode.TextEditor, isKeyboardChange: boolean)
         return;
     }
 
-    // don't hide if the current document isn't a "real" text editor (e.g. output or debug windows)
+    // don't hide if the current document isn't a "real" text editor (e.g. output window or other text buffer without some file backing)
+    // curiously, this still works as desired for terminals in the editor area (i.e. terminal tabs). idk why but okay!
     const path = vscode.window.activeTextEditor.document.fileName;
     const pathIsFile = path.includes(".") || path.includes("\\") || path.includes("/"); // dubious of this check but okay
     if (!pathIsFile || editor.document.uri.scheme == "output") {
